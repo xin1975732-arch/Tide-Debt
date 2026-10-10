@@ -1,0 +1,25 @@
+# 操作系统生成的文件
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# 编辑器配置和缓存
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 临时文件和日志
+*.tmp
+*.log
+
+# 后续开发可能生成的依赖和缓存
+node_modules/
+__pycache__/
+*.py[cod]
+
+# 本地环境配置
+.env
+.env.*
+!.env.example
