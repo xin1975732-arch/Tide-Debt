@@ -1,0 +1,844 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>围涂 · 评论 demo</title>
+  <style>
+    :root {
+      --bg: #0f1315;
+      --bg-2: #151d20;
+      --panel: #171d1f;
+      --paper: #f3efe8;
+      --paper-ink: #1d2123;
+      --line: rgba(227,222,210,.24);
+      --ink: #e4ddd1;
+      --ink-2: #b5b0a3;
+      --ink-3: #7b7f7d;
+      --accent: #e9b04a;
+      --accent-soft: rgba(233,176,74,.18);
+      --danger: #d85e52;
+      --success: #79a772;
+      --shadow: 0 20px 35px -24px rgba(0,0,0,.9);
+      --fs: 18px;
+      --bar: 52px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: "Noto Serif SC","Songti SC","STSong","SimSun",serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.9;
+    }
+    a { color: inherit; text-decoration: none; }
+    button, input, textarea { font: inherit; }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 16px 120px;
+    }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px;
+      backdrop-filter: blur(12px);
+      background: rgba(15,19,21,.72);
+      border-bottom: 1px solid var(--line);
+    }
+    .title {
+      font-weight: 700;
+      letter-spacing: .2em;
+      font-size: 0.9rem;
+    }
+    .meta {
+      color: var(--ink-2);
+      font-size: .75rem;
+      letter-spacing: .12em;
+    }
+    .book {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) minmax(280px,360px);
+      gap: 24px;
+      margin-top: 28px;
+      align-items: start;
+    }
+    .article {
+      background: rgba(255,255,255,.015);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 20px 18px 12px;
+      box-shadow: var(--shadow);
+    }
+    .chapter {
+      border-top: 1px solid var(--line);
+      padding-top: 18px;
+      margin-top: 18px;
+    }
+    .chapter:first-child { border-top: 0; margin-top: 0; padding-top: 0; }
+    .chapter-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .chapter-name {
+      font-size: 1.1rem;
+      letter-spacing: .18em;
+      color: var(--ink-2);
+    }
+    .chapter-note {
+      font-size: .72rem;
+      letter-spacing: .12em;
+      color: var(--ink-3);
+    }
+    .paragraph {
+      position: relative;
+      margin: 0 0 1.2em;
+      padding: 8px 10px 8px 12px;
+      border-radius: 10px;
+      transition: background .2s ease, box-shadow .2s ease;
+      scroll-margin-top: 88px;
+    }
+    .paragraph:hover,
+    .paragraph:focus-within {
+      background: rgba(233,176,74,.05);
+      box-shadow: inset 0 0 0 1px rgba(233,176,74,.18);
+    }
+    .paragraph[data-has-comments="true"]::after {
+      content: attr(data-comment-count) "";
+      position: absolute;
+      right: 8px;
+      top: 8px;
+      min-width: 1.4em;
+      height: 1.4em;
+      display: grid;
+      place-items: center;
+      padding: 0 6px;
+      border-radius: 999px;
+      background: rgba(233,176,74,.14);
+      border: 1px solid rgba(233,176,74,.28);
+      color: var(--accent);
+      font-family: "PingFang SC","Microsoft YaHei",sans-serif;
+      font-size: 11px;
+      letter-spacing: .02em;
+    }
+    .paragraph[data-has-comments="false"]::after {
+      content: "";
+    }
+    .comment-button {
+      position: absolute;
+      right: 8px;
+      top: 8px;
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      border: 1px solid rgba(233,176,74,.28);
+      background: rgba(233,176,74,.1);
+      color: var(--accent);
+      cursor: pointer;
+      opacity: 0;
+      transform: translateY(-4px);
+      transition: opacity .18s ease, transform .18s ease;
+    }
+    .paragraph:hover .comment-button,
+    .paragraph:focus-within .comment-button,
+    .comment-button:focus-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .paragraph[data-has-comments="true"] .comment-button {
+      opacity: 0.9;
+      transform: none;
+    }
+    .comment-button:focus-visible,
+    .mini-button:focus-visible,
+    .toggle-button:focus-visible,
+    .submit-button:focus-visible,
+    .reply-button:focus-visible,
+    .close-button:focus-visible,
+    .panel-close:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    .paragraph-text {
+      margin: 0;
+      text-indent: 2em;
+      font-size: var(--fs);
+      color: var(--ink);
+    }
+    .side {
+      display: grid;
+      gap: 18px;
+    }
+    .card {
+      background: rgba(255,255,255,.02);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+    }
+    .card h3 {
+      margin: 0 0 12px;
+      font-size: .82rem;
+      letter-spacing: .2em;
+      color: var(--ink-2);
+      font-weight: 700;
+    }
+    .mini-button,
+    .toggle-button,
+    .submit-button,
+    .reply-button,
+    .close-button,
+    .panel-close {
+      border: 1px solid rgba(233,176,74,.38);
+      background: rgba(233,176,74,.08);
+      color: var(--ink);
+      border-radius: 10px;
+      padding: 8px 12px;
+      cursor: pointer;
+      transition: transform .15s ease, border-color .15s ease;
+    }
+    .mini-button:hover,
+    .toggle-button:hover,
+    .submit-button:hover,
+    .reply-button:hover,
+    .close-button:hover,
+    .panel-close:hover {
+      transform: translateY(-1px);
+      border-color: rgba(233,176,74,.7);
+    }
+    .status-box {
+      color: var(--ink-2);
+      font-size: .8rem;
+      line-height: 1.8;
+    }
+    .status-box strong { color: var(--ink); }
+    .chapter-thread {
+      margin-top: 14px;
+      border-top: 1px solid var(--line);
+      padding-top: 12px;
+    }
+    .toggle-button {
+      width: 100%;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: .9rem;
+    }
+    .toggle-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .toggle-icon {
+      width: 10px;
+      height: 10px;
+      border-left: 2px solid currentColor;
+      border-bottom: 2px solid currentColor;
+      transform: rotate(-45deg);
+      transition: transform .2s ease;
+    }
+    .toggle-button[aria-expanded="true"] .toggle-icon {
+      transform: rotate(135deg);
+    }
+    .thread-content {
+      display: none;
+      margin-top: 12px;
+      border-radius: 12px;
+      padding: 12px;
+      background: rgba(255,255,255,.02);
+      border: 1px solid var(--line);
+    }
+    .toggle-button[aria-expanded="true"] + .thread-content { display: block; }
+    .thread-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .thread-item {
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: rgba(255,255,255,.02);
+      border: 1px solid var(--line);
+    }
+    .thread-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--ink-2);
+      font-size: .7rem;
+      letter-spacing: .08em;
+      margin-bottom: 6px;
+    }
+    .thread-copy {
+      color: var(--ink);
+      font-size: .92rem;
+      line-height: 1.7;
+    }
+    .thread-copy a {
+      color: var(--accent);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .final-review {
+      margin-top: 28px;
+      background: rgba(255,255,255,.02);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+    }
+    .review-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .review-header h3 {
+      margin: 0;
+      font-size: 1rem;
+      letter-spacing: .18em;
+      color: var(--ink-2);
+    }
+    .review-note {
+      color: var(--danger);
+      font-size: .72rem;
+      letter-spacing: .12em;
+      margin-bottom: 12px;
+    }
+    .review-content {
+      display: none;
+      margin-top: 12px;
+    }
+    .final-review[data-open="true"] .review-content { display: block; }
+    .panel {
+      position: fixed;
+      inset: auto 0 0 auto;
+      width: min(480px, 100vw);
+      height: min(82vh, 760px);
+      background: rgba(17,21,23,.96);
+      border: 1px solid var(--line);
+      border-radius: 20px 20px 0 0;
+      box-shadow: 0 -24px 42px -20px rgba(0,0,0,.78);
+      transform: translateY(calc(100% + 20px));
+      transition: transform .22s ease;
+      z-index: 30;
+    }
+    .panel.open { transform: translateY(0); }
+    @media (min-width: 760px) {
+      .panel {
+        inset: 0 0 0 auto;
+        width: min(420px, 34vw);
+        height: 100vh;
+        border-radius: 20px 0 0 20px;
+        transform: translateX(calc(100% + 8px));
+      }
+      .panel.open { transform: translateX(0); }
+    }
+    .panel-inner {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      height: 100%;
+      max-height: 100vh;
+    }
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 16px 12px;
+      border-bottom: 1px solid var(--line);
+    }
+    .panel-title {
+      font-size: .92rem;
+      letter-spacing: .12em;
+      color: var(--ink-2);
+    }
+    .panel-close {
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      display: grid;
+      place-items: center;
+      font-size: 1.2rem;
+      border-radius: 50%;
+    }
+    .panel-body {
+      overflow: auto;
+      padding: 16px 16px 12px;
+      display: grid;
+      gap: 14px;
+    }
+    .quoted-text {
+      background: rgba(255,255,255,.02);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      color: var(--ink-2);
+      font-size: .9rem;
+      line-height: 1.7;
+    }
+    .comment-list {
+      display: grid;
+      gap: 10px;
+    }
+    .comment-item {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.02);
+      border-radius: 12px;
+      padding: 10px 12px;
+    }
+    .comment-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+      color: var(--ink-2);
+      font-size: .68rem;
+      letter-spacing: .08em;
+    }
+    .comment-author {
+      font-weight: 700;
+      color: var(--ink);
+      letter-spacing: .04em;
+    }
+    .comment-body {
+      color: var(--ink);
+      font-size: .92rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+    }
+    .reply-list {
+      margin-top: 10px;
+      display: grid;
+      gap: 8px;
+      padding-left: 12px;
+      border-left: 2px solid rgba(233,176,74,.2);
+    }
+    .reply-item {
+      padding: 8px 10px;
+      background: rgba(255,255,255,.01);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      font-size: .84rem;
+      color: var(--ink-2);
+    }
+    .reply-item strong { color: var(--ink); }
+    .panel-form {
+      border-top: 1px solid var(--line);
+      padding: 14px 16px 18px;
+      display: grid;
+      gap: 10px;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+    .field label {
+      font-size: .68rem;
+      letter-spacing: .12em;
+      color: var(--ink-3);
+    }
+    .field input,
+    .field textarea {
+      width: 100%;
+      background: rgba(255,255,255,.02);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      color: var(--ink);
+      padding: 10px 12px;
+      resize: vertical;
+      min-height: 42px;
+    }
+    .field textarea { min-height: 126px; }
+    .submit-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .submit-hint {
+      color: var(--ink-3);
+      font-size: .72rem;
+      letter-spacing: .08em;
+    }
+    .submit-button {
+      padding: 10px 16px;
+      font-weight: 700;
+      letter-spacing: .08em;
+    }
+    .panel-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.42);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s ease;
+      z-index: 20;
+    }
+    .panel-overlay.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      padding: 0;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      border: 0;
+    }
+    @media (max-width: 760px) {
+      .book { grid-template-columns: 1fr; }
+      .row { grid-template-columns: 1fr; }
+      .panel { width: min(100vw, 100%); }
+      .paragraph[data-has-comments="true"]::after {
+        right: 40px;
+      }
+      .comment-button {
+        right: 40px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="topbar" aria-label="页面顶部导航">
+      <div class="title">围涂</div>
+      <div class="meta">bookId = Tide Borrow</div>
+    </header>
+
+    <div class="book">
+      <main class="article" aria-label="正文阅读区">
+        <section class="chapter" data-chapter-id="ch01">
+          <div class="chapter-head">
+            <div class="chapter-name">第一章 旧账</div>
+            <div class="chapter-note">本章讨论 · 默认折叠</div>
+          </div>
+
+          <article class="paragraph" data-paragraph-id="book:Tide Borrow|ch01|p1" data-comment-count="0" data-has-comments="false" tabindex="0">
+            <button class="comment-button" type="button" aria-label="打开段落评论：第一段">💬</button>
+            <p class="paragraph-text">雨落在檐角，像一只没轻手的掌，敲在泥墙上，暮色里，纸账的纸页津起一层潮意。沈默把灯火压小些，照见指尖泛白的墨迹，心里却像被谁在熟睡里按了一下。</p>
+          </article>
+
+          <article class="paragraph" data-paragraph-id="book:Tide Borrow|ch01|p2" data-comment-count="2" data-has-comments="true" tabindex="0">
+            <button class="comment-button" type="button" aria-label="打开段落评论：第二段">💬</button>
+            <p class="paragraph-text">他抬眼看见一线落水沿着屋檐滴进灰泥，回声细而慢，像远处有人在旧河床上行路。小小一处破损，偏偏落在他该盯着的账册旁边，像一枚不肯说话的钉子，沉得很。</p>
+          </article>
+
+          <article class="paragraph" data-paragraph-id="book:Tide Borrow|ch01|p3" data-comment-count="0" data-has-comments="false" tabindex="0">
+            <button class="comment-button" type="button" aria-label="打开段落评论：第三段">💬</button>
+            <p class="paragraph-text">门外有人低声叫了他的名字，声音里有湿泥和喘气。沈默已经知道来人不是来报喜，便把旧册合上，等雨声在厅中安静下来，再抬头看那人的脸色。</p>
+          </article>
+
+          <div class="chapter-thread">
+            <button class="toggle-button" type="button" aria-expanded="false" aria-controls="thread-ch01">
+              <span class="toggle-label"><span class="toggle-icon" aria-hidden="true"></span>本章讨论</span>
+              <span class="thread-count">2 条</span>
+            </button>
+            <div class="thread-content" id="thread-ch01">
+              <div class="thread-list">
+                <div class="thread-item">
+                  <div class="thread-meta"><span>读者 · 旧账</span><span>09:12</span></div>
+                  <div class="thread-copy">有人说“这一章最像一扇门”，我觉得是因为沈默一开始就把墨水压在纸页里。所有动作都在等一个人揭开账本。</div>
+                </div>
+                <div class="thread-item">
+                  <div class="thread-meta"><span>读者 · 稿纸</span><span>09:24</span></div>
+                  <div class="thread-copy">“雨落在檐角”这一句很好，像是有个看不见的人站在门外，敲了几下——我也在想，这种不安感是否像第一本章的序章把人钉在地上。</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="chapter" data-chapter-id="ch02">
+          <div class="chapter-head">
+            <div class="chapter-name">第二章 满堂灯</div>
+            <div class="chapter-note">本章讨论 · 默认折叠</div>
+          </div>
+
+          <article class="paragraph" data-paragraph-id="book:Tide Borrow|ch02|p1" data-comment-count="1" data-has-comments="true" tabindex="0">
+            <button class="comment-button" type="button" aria-label="打开段落评论：第四段">💬</button>
+            <p class="paragraph-text">人群在灯下不说话，像江面上一层压住的雾。有人把名单递进来，名单边缘还能看见油墨被手心磨得发亮，像一条不肯消失的船路。</p>
+          </article>
+
+          <article class="paragraph" data-paragraph-id="book:Tide Borrow|ch02|p2" data-comment-count="0" data-has-comments="false" tabindex="0">
+            <button class="comment-button" type="button" aria-label="打开段落评论：第五段">💬</button>
+            <p class="paragraph-text">他抽过来一看，内里是十几个人的名字，排列得整整齐齐；可其中有一页没有落款，纸角微微卷起，与其余清单形成鲜明反差，像被刻意抬高的一道暗线。</p>
+          </article>
+
+          <div class="chapter-thread">
+            <button class="toggle-button" type="button" aria-expanded="false" aria-controls="thread-ch02">
+              <span class="toggle-label"><span class="toggle-icon" aria-hidden="true"></span>本章讨论</span>
+              <span class="thread-count">1 条</span>
+            </button>
+            <div class="thread-content" id="thread-ch02">
+              <div class="thread-list">
+                <div class="thread-item">
+                  <div class="thread-meta"><span>读者 · 灯下</span><span>11:18</span></div>
+                  <div class="thread-copy">“名单边缘还能看见油墨被手心磨得发亮”，这句话把人群和手掌之间的权力关系说得很清楚。真的很有状态。</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="final-review" data-open="false">
+          <div class="review-header">
+            <h3>读后感</h3>
+            <button class="mini-button" type="button" aria-expanded="false">展开</button>
+          </div>
+          <div class="review-note">含全书剧透</div>
+          <div class="review-content">
+            <p>这本书的力量，一半在于它不急着把真相摊给你，而是把每个动作都留在潮湿的纸面上。读到后来，才发现真正的“围涂”不是遮挡，而是一种让人难以看清的交叉书写。</p>
+          </div>
+        </div>
+      </main>
+
+      <aside class="side" aria-label="评论区导航">
+        <div class="card">
+          <h3>状态</h3>
+          <div class="status-box">
+            <div><strong>bookId</strong>：Tide Borrow</div>
+            <div><strong>评论服务</strong>：尚未配置</div>
+            <div><strong>模式</strong>：Waline 预留 + 前端安全兜底</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>说明</h3>
+          <div class="status-box">
+            1. 段落评论仅在对应段落展示，不遮挡正文。<br>
+            2. 本章讨论默认折叠，编辑器每章独立保存。<br>
+            3. 读后感默认折叠，且警示含全书剧透。<br>
+            4. 未配置后端时，页面显示“评论服务尚未配置”。
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <div class="panel-overlay" id="panelOverlay" aria-hidden="true"></div>
+  <aside class="panel" id="commentPanel" aria-label="段落评论面板" aria-hidden="true">
+    <div class="panel-inner">
+      <div class="panel-head">
+        <div class="panel-title">段落评论</div>
+        <button class="panel-close" type="button" aria-label="关闭评论面板">×</button>
+      </div>
+      <div class="panel-body">
+        <div class="quoted-text" id="panelQuote">请先选择段落</div>
+        <div class="comment-list" id="commentList"></div>
+      </div>
+      <form class="panel-form" id="commentForm" novalidate>
+        <div class="row">
+          <div class="field">
+            <label for="nickName">昵称</label>
+            <input id="nickName" name="nickName" type="text" maxlength="24" placeholder="自填署名" required>
+          </div>
+          <div class="field">
+            <label for="email">邮箱（可选）</label>
+            <input id="email" name="email" type="email" maxlength="80" placeholder="仅用于通知，不公开">
+          </div>
+        </div>
+        <div class="field">
+          <label for="message">留言</label>
+          <textarea id="message" name="message" maxlength="400" placeholder="请勿泄露后续章节情节。" required></textarea>
+        </div>
+        <div class="submit-row">
+          <div class="submit-hint">昵称为自填署名，不等于实名</div>
+          <button class="submit-button" type="submit">提交留言</button>
+        </div>
+      </form>
+    </div>
+  </aside>
+
+  <script>
+    const APP = {
+      bookId: 'Tide Borrow',
+      config: {
+        waline: !!window.WALINE_CONFIG,
+        serverURL: window.WALINE_CONFIG && window.WALINE_CONFIG.serverURL || '',
+      },
+      state: {
+        currentParagraphId: null,
+        currentChapterId: null,
+      },
+      data: {
+        'book:Tide Borrow|ch01|p1': [],
+        'book:Tide Borrow|ch01|p2': [
+          { id: 'c1', author: '读者A', email: '', content: '“纸页津起一层潮意”这句很让人心里发紧，像天光正在褪去。', replies: [{ author: '管理员', content: '同感，潮意比风声更像一层情绪上的压迫。' }] },
+          { id: 'c2', author: '读者B', email: '', content: '我觉得这段是说“见小破损，像钉子”，非常顺。', replies: [] }
+        ],
+        'book:Tide Borrow|ch01|p3': [],
+        'book:Tide Borrow|ch02|p1': [
+          { id: 'c3', author: '读者C', email: '', content: '“有人把名单递进来”有一种很像“命运露出角落”的感觉。', replies: [] }
+        ],
+      }
+    };
+
+    const panel = document.getElementById('commentPanel');
+    const overlay = document.getElementById('panelOverlay');
+    const quoteEl = document.getElementById('panelQuote');
+    const commentList = document.getElementById('commentList');
+    const form = document.getElementById('commentForm');
+    const nicknameInput = document.getElementById('nickName');
+    const emailInput = document.getElementById('email');
+    const messageInput = document.getElementById('message');
+
+    function openPanel(paragraph) {
+      const paragraphId = paragraph.dataset.paragraphId;
+      const text = paragraph.querySelector('.paragraph-text').textContent.trim();
+      APP.state.currentParagraphId = paragraphId;
+      APP.state.currentChapterId = paragraph.dataset.chapterId || paragraph.closest('.chapter').dataset.chapterId;
+      quoteEl.textContent = text;
+      renderComments(paragraphId);
+      panel.classList.add('open');
+      overlay.classList.add('visible');
+      panel.setAttribute('aria-hidden', 'false');
+      overlay.setAttribute('aria-hidden', 'false');
+      const firstInput = form.querySelector('input');
+      setTimeout(() => firstInput.focus(), 80);
+    }
+
+    function closePanel() {
+      panel.classList.remove('open');
+      overlay.classList.remove('visible');
+      panel.setAttribute('aria-hidden', 'true');
+      overlay.setAttribute('aria-hidden', 'true');
+    }
+
+    function renderComments(paragraphId) {
+      const list = APP.data[paragraphId] || [];
+      if (!list.length) {
+        commentList.innerHTML = '<div class="comment-item"><div class="comment-body">还没有人评论，快来写下第一条留言。</div></div>';
+        return;
+      }
+      commentList.innerHTML = list.map((item) => {
+        const replies = (item.replies || []).map((r) => 
+          '<div class="reply-item"><strong>' + escapeHtml(r.author) + '</strong>：' + escapeHtml(r.content) + '</div>'
+        ).join('');
+        return '<div class="comment-item">' +
+          '<div class="comment-head"><span class="comment-author">' + escapeHtml(item.author) + '</span><span>' + (item.email ? '已公开邮箱' : '邮箱不公开') + '</span></div>' +
+          '<div class="comment-body">' + escapeHtml(item.content) + '</div>' +
+          (replies ? '<div class="reply-list">' + replies + '</div>' : '') +
+          '</div>';
+      }).join('');
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    document.querySelectorAll('.comment-button').forEach((btn) => {
+      btn.addEventListener('click', () => openPanel(btn.closest('.paragraph')));
+    });
+
+    document.querySelectorAll('.paragraph').forEach((p) => {
+      p.addEventListener('keydown', (event) => {
+        if ((event.key === 'Enter' || event.key === ' ') && event.target === p) {
+          event.preventDefault();
+          openPanel(p);
+        }
+      });
+    });
+
+    document.querySelector('.panel-close').addEventListener('click', closePanel);
+    overlay.addEventListener('click', closePanel);
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && panel.classList.contains('open')) {
+        closePanel();
+      }
+    });
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      if (!APP.state.currentParagraphId) {
+        alert('请先选择段落。');
+        return;
+      }
+      const nickname = nicknameInput.value.trim();
+      const email = emailInput.value.trim();
+      const content = messageInput.value.trim();
+      if (!nickname || !content) {
+        alert('昵称和留言不能为空。');
+        return;
+      }
+      if (content.length > 400) {
+        alert('留言不能超过 400 字。');
+        return;
+      }
+      const entry = {
+        id: 'local-' + Date.now(),
+        author: nickname,
+        email: email,
+        content,
+        replies: []
+      };
+      const list = APP.data[APP.state.currentParagraphId] || [];
+      list.push(entry);
+      APP.data[APP.state.currentParagraphId] = list;
+      const paragraph = document.querySelector('[data-paragraph-id="' + APP.state.currentParagraphId + '"]');
+      if (paragraph) {
+        const count = list.length;
+        paragraph.dataset.hasComments = 'true';
+        paragraph.dataset.commentCount = String(count);
+        paragraph.setAttribute('data-comment-count', String(count));
+      }
+      renderComments(APP.state.currentParagraphId);
+      form.reset();
+      const paragraphId = APP.state.currentParagraphId;
+      const parent = document.querySelector('[data-paragraph-id="' + paragraphId + '"]');
+      if (parent) {
+        parent.scrollIntoView({ block: 'center' });
+      }
+    });
+
+    document.querySelectorAll('.toggle-button').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const isOpen = btn.getAttribute('aria-expanded') === 'true';
+        btn.setAttribute('aria-expanded', String(!isOpen));
+      });
+    });
+
+    document.querySelector('.final-review .mini-button').addEventListener('click', () => {
+      const review = document.querySelector('.final-review');
+      const expanded = review.dataset.open === 'true';
+      review.dataset.open = String(!expanded);
+      const btn = review.querySelector('.mini-button');
+      btn.textContent = expanded ? '展开' : '收起';
+      btn.setAttribute('aria-expanded', String(!expanded));
+    });
+
+    if (!window.WALINE_CONFIG || !window.WALINE_CONFIG.serverURL) {
+      console.info('评论服务尚未配置：Waline serverURL 未设置。页面用前端交互兜底。');
+      const status = document.querySelector('.status-box');
+      if (status) {
+        status.insertAdjacentHTML('beforeend', '<div style="margin-top:12px; color: #f2be7f;">未配置时，页面提示“评论服务尚未配置”，不显示虚假提交成功。</div>');
+      }
+    }
+  </script>
+</body>
+</html>
