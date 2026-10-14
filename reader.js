@@ -572,7 +572,7 @@
         onScroll();
       };
       window.scrollTo(0, 0);
-      if ((r.p != null || doResume) && document.fonts && document.fonts.ready) document.fonts.ready.then(function () { setTimeout(after, 30); });
+      if ((r.p != null || doResume) && document.fonts && document.fonts.ready) Promise.race([document.fonts.ready, new Promise(function (ok) { setTimeout(ok, 1500); })]).then(function () { setTimeout(after, 30); });
       else after();
       return;
     }
