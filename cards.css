@@ -1,0 +1,323 @@
+/* 围涂 · cards.css —— 正文里的证物（纸）和手机（群聊、私信、锁屏）
+   从围涂原来的版式搬来，选择器都挂在 .text 底下，免得和内核、功能页的 .bub / .who / .av 撞名。
+   群聊气泡 .wbub、发信人 .wwho、引用 .wq；证物的纸色用 --doc / --doc-2。 */
+
+/* 换场：三道由近及远的塘 */
+.text .brk { display: flex; flex-direction: column; align-items: center; gap: 5px; margin: 2.3em auto 2.2em; }
+.text .brk i { display: block; height: 1px; background: var(--mood); opacity: .75; }
+.text .brk i:nth-child(1) { width: 46px; }
+.text .brk i:nth-child(2) { width: 28px; opacity: .55; }
+.text .brk i:nth-child(3) { width: 12px; opacity: .4; }
+:root[data-mood="deng"] .brk i { height: 1.5px; }
+
+/* 行内：红笔、手写、铅笔 */
+.text .redpen { font-family: var(--pen); color: var(--red-ink); font-size: 1.12em; letter-spacing: .04em; }
+.text .hand { font-family: var(--kai); font-size: 1.08em; letter-spacing: .04em; }
+.text .pencil { font-family: var(--pen); color: var(--ink-2); font-size: 1.1em; letter-spacing: .04em; }
+
+/* ---------- 证物：纸 ---------- */
+.text .doc {
+  position: relative;
+  margin: 1.9em auto;
+  max-width: 25em;
+  text-indent: 0;
+  color: var(--paper-ink);
+  background: var(--doc);
+  box-shadow: var(--doc-shadow);
+}
+.text .doc p { margin: 0; text-indent: 0; }
+
+/* 稿纸：关于余额的说明 */
+.text .gaozhi {
+  --cell: 1.55em;
+  --gz: var(--gz-line);
+  width: fit-content; max-width: 100%;
+  padding: 1em 1.1em 1.1em;
+  font-family: var(--kai);
+  transform: rotate(-.6deg);
+}
+.text .gz-row { display: grid; grid-template-columns: repeat(10, var(--cell)); border-left: 1px solid var(--gz); }
+.text .gz-row + .gz-row { margin-top: .42em; }
+.text .gz-row span {
+  display: grid; place-items: center;
+  height: var(--cell);
+  border: 1px solid var(--gz); border-left: 0;
+  font-size: 1.04em; line-height: 1; color: var(--paper-ink);
+}
+@media (max-width: 400px) {.text .gaozhi { --cell: 1.42em; padding-inline: .8em; } }
+
+/* 登记簿扉页 */
+.text .fly {
+  max-width: 21em;
+  padding: 2.2em 1.2em 2em 1.5em;
+  border-left: 12px solid var(--cover);
+  text-align: center;
+  font-family: var(--kai);
+  font-size: 1.12em;
+  letter-spacing: .08em;
+  color: var(--paper-wet);
+  transform: rotate(.4deg);
+}
+
+/* 收条：蓝色圆珠笔，对折过 */
+.text .slip {
+  max-width: 24em;
+  padding: 1.3em 1.4em 1.2em;
+  font-family: var(--kai);
+  color: var(--paper-pen);
+  line-height: 2.25;
+  background:
+    linear-gradient(90deg, transparent calc(50% - 1px), rgba(0, 0, 0, .07) 50%, transparent calc(50% + 1px)),
+    repeating-linear-gradient(to bottom, transparent 0, transparent calc(2.25em - 1px), var(--paper-rule) calc(2.25em - 1px), var(--paper-rule) 2.25em) 0 1.3em / 100% calc(100% - 2.5em) no-repeat,
+    var(--doc);
+  transform: rotate(-.7deg);
+}
+.text .slip p:first-child { text-indent: 2em; }
+.text .slip .r { text-align: right; }
+
+/* 罗维民的账簿：泡过水，蓝墨水洇开 */
+.text .ledger {
+  max-width: 24em;
+  padding: 1.3em 1.5em 1.4em;
+  font-family: var(--kai);
+  color: var(--paper-wet);
+  line-height: 2.05;
+  text-shadow: 0 0 1.2px rgba(35, 57, 107, .7), 0 0 5px rgba(35, 57, 107, .28);
+  background:
+    radial-gradient(ellipse 60% 38% at 18% 26%, rgba(126, 98, 58, .2), transparent 70%),
+    radial-gradient(ellipse 48% 30% at 84% 74%, rgba(126, 98, 58, .17), transparent 70%),
+    radial-gradient(ellipse 30% 22% at 60% 12%, rgba(126, 98, 58, .12), transparent 70%),
+    var(--doc-2);
+  border-radius: 2px 6px 3px 8px / 6px 3px 8px 2px;
+  transform: rotate(.5deg) skewX(-.6deg);
+}
+.text .ledger .lh { padding-bottom: .2em; margin-bottom: .3em; border-bottom: 1px solid var(--paper-rule); }
+.text .ledger .li { display: grid; grid-template-columns: 5.2em auto; gap: .4em; padding-left: 1em; }
+.text .ledger.crop { max-width: 17em; padding: .8em 1.2em; text-align: center; font-size: 1.08em; letter-spacing: .1em; }
+
+/* 协议复印件 */
+.text .contract {
+  max-width: 26em;
+  padding: 1.7em 1.5em 1.4em;
+  font-size: .93em;
+  line-height: 1.95;
+  color: var(--paper-ink);
+  background:
+    radial-gradient(rgba(0, 0, 0, .09) .6px, transparent .9px) 0 0 / 7px 9px,
+    radial-gradient(rgba(0, 0, 0, .06) .5px, transparent .8px) 3px 4px / 11px 13px,
+    linear-gradient(90deg, rgba(0, 0, 0, .06), transparent 6%, transparent 94%, rgba(0, 0, 0, .08)),
+    var(--doc-2);
+  filter: grayscale(1);
+}
+.text .contract::before {
+  content: "复印件"; position: absolute; top: .55em; right: .8em;
+  font-family: var(--sans); font-size: 11px; letter-spacing: .3em; color: var(--paper-ink-2); opacity: .8;
+}
+.text .contract p + p { margin-top: .55em; }
+.text .contract b { font-family: var(--sans); font-weight: 700; }
+
+/* 守义的小本子：巴掌大，蓝色人造革 */
+.text .note {
+  max-width: 15.5em;
+  padding: 1em 1.1em .9em 2em;
+  border-top: 9px solid var(--cover);
+  border-radius: 3px 3px 2px 2px;
+  font-family: var(--kai);
+  color: var(--paper-ink);
+  line-height: 2.1;
+  background:
+    linear-gradient(90deg, transparent 1.45em, var(--gz-line) 1.45em, var(--gz-line) calc(1.45em + 1px), transparent calc(1.45em + 1px)),
+    repeating-linear-gradient(to bottom, transparent 0, transparent calc(2.1em - 1px), var(--paper-rule) calc(2.1em - 1px), var(--paper-rule) 2.1em) 0 1em / 100% 100% no-repeat,
+    var(--doc);
+  transform: rotate(-.8deg);
+}
+.text .note p { font-size: 1.12em; letter-spacing: .08em; }
+.text .note .blank { height: 2.1em; }
+.text .note.big p { font-size: 2.1em; line-height: 1; padding: .2em 0 .1em; }
+
+/* 钟家老太的病历本，封底内侧 */
+.text .medical {
+  max-width: 21em;
+  padding: 1.1em 1.1em 1.2em 1.2em;
+  font-family: var(--pen);
+  color: var(--paper-pen);
+  line-height: 1.95;
+  font-size: 1.02em;
+  background:
+    radial-gradient(ellipse at 90% 10%, rgba(0, 0, 0, .06), transparent 50%),
+    var(--card);
+  border-radius: 2px;
+  transform: rotate(.9deg);
+}
+.text .medical p:nth-child(1) { transform: rotate(-1.4deg) translateX(.1em); }
+.text .medical p:nth-child(2) { transform: rotate(.9deg) translateX(.5em); }
+.text .medical p:nth-child(3) { transform: rotate(-.6deg) translateX(.25em); }
+.text .medical p:nth-child(4) { transform: rotate(1.3deg) translateX(.45em); }
+.text .medical p:nth-child(5) { transform: rotate(-1deg) translateX(.15em); margin-top: .35em; }
+.text .scratch-t { position: relative; display: inline-block; }
+.text .scratch-t::after {
+  content: ""; position: absolute; left: -.1em; right: -.15em; bottom: .02em; height: 2px;
+  background: var(--paper-ink-2); border-radius: 2px; opacity: .75;
+  transform: scaleX(0) rotate(-2deg); transform-origin: 0 50%;
+  transition: transform .9s cubic-bezier(.3, .7, .2, 1) .2s;
+}
+.text .scratch-t.on::after { transform: scaleX(1) rotate(-2deg); }
+
+/* 母亲那一行：红字一行，铅笔一行 */
+.text .entry {
+  max-width: 26em;
+  padding: .55em 1.1em;
+  font-family: var(--pen);
+  font-size: 1.12em;
+  line-height: 1.85;
+  background:
+    linear-gradient(to bottom, var(--paper-rule) 1px, transparent 1px) 0 0 / 100% 100%,
+    linear-gradient(to top, var(--paper-rule) 1px, transparent 1px) 0 0 / 100% 100%,
+    var(--doc);
+}
+.text .entry.red { color: var(--paper-red); letter-spacing: .08em; }
+.text .entry.pencil { color: var(--paper-pencil); font-size: 1.02em; letter-spacing: .02em; }
+
+/* 报告附注 */
+.text > .fn {
+  margin: 1.1em 0;
+  padding: .85em 1em .9em 1.1em;
+  border-left: 3px solid var(--rule);
+  background: var(--bg-2);
+  font-size: .93em;
+  line-height: 1.85;
+  text-indent: 0;
+  text-align: justify;
+}
+.text > .fn.slow { border-left-color: var(--lamp); }
+.text .fn b { font-family: var(--sans); font-weight: 700; letter-spacing: .12em; margin-right: .2em; }
+
+/* 守义的签字页：工整，一笔一画 */
+.text .sign {
+  max-width: 24em;
+  padding: 1em 1.3em;
+  font-family: var(--kai);
+  color: var(--paper-ink);
+  line-height: 1.9;
+  letter-spacing: .05em;
+  background:
+    repeating-linear-gradient(to bottom, transparent 0, transparent calc(1.9em - 1px), var(--paper-rule) calc(1.9em - 1px), var(--paper-rule) 1.9em) 0 1em / 100% calc(100% - 2em) no-repeat,
+    var(--doc);
+}
+.text .sign.big { max-width: 10em; text-align: center; font-size: 1.5em; letter-spacing: .22em; padding: .55em 1em; }
+
+/* ---------- 手机：群聊、私信、锁屏 ---------- */
+.text .chat {
+  margin: 1.7em auto;
+  max-width: 25em;
+  padding: 10px 12px 12px;
+  border-radius: 16px;
+  background: var(--chat);
+  font-family: var(--sans);
+  font-size: .84em;
+  line-height: 1.6;
+  text-indent: 0;
+  letter-spacing: .01em;
+}
+.text .chat-h {
+  display: flex; justify-content: center; align-items: center; gap: .5em;
+  margin: 0 0 4px; padding: 2px 0 8px;
+  border-bottom: 1px solid var(--rule);
+  font-size: .82em; color: var(--sys); letter-spacing: .06em;
+}
+.text .chat-h .t { font-family: var(--mono); font-size: .95em; }
+.text .msg { display: grid; grid-template-columns: 2.3em minmax(0, 1fr); gap: 9px; margin-top: 10px; align-items: start; }
+.text .av {
+  width: 2.3em; height: 2.3em; border-radius: 7px;
+  display: grid; place-items: center;
+  background: var(--av); color: var(--av-ink);
+  font-size: .9em; font-weight: 600;
+}
+.text .av.anon::before { content: ""; width: 42%; height: 42%; border-radius: 50%; background: currentColor; opacity: .35; }
+.text .wwho { margin: 0 0 2px; font-size: .8em; color: var(--sys); display: flex; gap: .6em; align-items: center; flex-wrap: wrap; }
+.text .vt { display: inline-flex; align-items: center; gap: 2px; font-size: .92em; opacity: .9; }
+.text .vt svg { width: 11px; height: 11px; }
+.text .wbub {
+  display: inline-block; max-width: 100%;
+  padding: 7px 11px; border-radius: 3px 12px 12px 12px;
+  background: var(--bubble); color: var(--bubble-ink);
+  overflow-wrap: anywhere;
+}
+.text .wbub .wq {
+  display: block; margin: 0 0 5px; padding: 4px 8px;
+  border-left: 2px solid var(--sys); border-radius: 2px;
+  font-size: .86em; color: var(--sys);
+}
+.text .msg.shot .wbub { outline: 1px dashed var(--sys); outline-offset: 4px; }
+.text .sysm { margin: 10px 0 2px; text-align: center; font-size: .8em; color: var(--sys); }
+.text .sysm span { display: inline-block; padding: 2px 10px; border-radius: 6px; background: var(--bg-2); }
+
+.text .lock {
+  margin: 2em auto .6em;
+  max-width: 22em;
+  padding: 12px 14px 13px;
+  border-radius: 18px;
+  background: var(--lock-bg);
+  color: var(--lock-ink);
+  font-family: var(--sans);
+  font-size: .84em;
+  line-height: 1.5;
+  text-indent: 0;
+  box-shadow: var(--shadow);
+  opacity: .5;
+  filter: brightness(.6);
+}
+.text .lock.lit { animation: lockLit 3.6s ease-out .2s both; }
+@keyframes lockLit {
+  0% { opacity: .5; filter: brightness(.6); }
+  12% { opacity: 1; filter: brightness(1.15); }
+  58% { opacity: 1; filter: brightness(1); }
+  100% { opacity: .42; filter: brightness(.55); }
+}
+.text .lock-h { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.text .lock-h b { font-weight: 600; }
+.text .lock-h .t { margin-left: auto; font-family: var(--mono); font-size: .9em; opacity: .7; }
+.text .lock-h .av { width: 1.9em; height: 1.9em; border-radius: 6px; background: var(--lock-av); color: var(--lock-ink); font-size: .8em; }
+.text .lock p { margin: 0; }
+
+.text .gname {
+  margin: 1.4em auto;
+  max-width: 20em;
+  padding: .65em 1em;
+  border-radius: 12px;
+  background: var(--chat);
+  font-family: var(--sans);
+  font-size: .86em;
+  text-align: center;
+  text-indent: 0;
+}
+.text .gname small { display: block; font-size: .78em; letter-spacing: .2em; color: var(--sys); margin-bottom: 2px; }
+.text .gname s { color: var(--sys); text-decoration-color: var(--red); text-decoration-thickness: 1.5px; }
+
+/* 结尾：远处的打桩声 */
+.text .thud { display: flex; gap: 12px; margin: 1.4em 0 0; }
+.text .thud i { display: block; width: 7px; height: 7px; border-radius: 50%; background: var(--ink-3); opacity: .22; }
+.text .thud.go i { animation: thud 1.5s ease-out both; }
+.text .thud.go i:nth-child(2) { animation-delay: 1.4s; }
+.text .thud.go i:nth-child(3) { animation-delay: 2.8s; }
+@keyframes thud {
+  0% { opacity: .22; transform: scale(1); }
+  10% { opacity: 1; transform: scale(1.7); }
+  45% { opacity: .55; transform: scale(1); }
+  100% { opacity: .55; transform: scale(1); }
+}
+
+/* ---------- 搬进内核之后补的几条 ---------- */
+.text .brk i { border-radius: 0; }
+.text .doc p, .text .chat p, .text .lock p { margin: 0; text-indent: 0; }
+.text .chat .av, .text .lock .av { width: 2.3em; height: 2.3em; }
+.text .chat p.wbub { display: inline-block; font-size: inherit; }
+.text .chat p.sysm { margin: 10px 0 2px; text-align: center; }
+.text .chat .wwho { margin: 0 0 2px; }
+.text .chat .wwho .vt svg { width: 11px; height: 11px; }
+.text p.wbub.flash { animation: none; outline: 2px solid var(--lamp); outline-offset: 2px; }
+.text .doc [data-p].flash, .text .lock [data-p].flash { animation: none; outline: 2px solid var(--lamp); outline-offset: 2px; }
+.text .gaozhi[data-p] .gz-row span { text-indent: 0; }
+.text .doc.ledger .li { text-indent: 0; }
+.text > p.fn { text-align: justify; }
+@media (max-width: 400px) { .text .gaozhi { --cell: 1.42em; padding-inline: .8em; } }
