@@ -16,6 +16,7 @@
   var R = window.Reader;
   if (!R) return;
   var D = R.data, CH = R.chapters, N = CH.length, esc = R.esc, el = R.el, pad = R.pad;
+  var LOCAL = !!D.local; // 纯静态部署（如 GitHub Pages）：没有评论、读后感、读者页、后台
   var PEOPLE = (D.people && D.people.people) || [];
   var PBY = {};
   PEOPLE.forEach(function (p) { PBY[p.id] = p; });
@@ -23,7 +24,6 @@
   var TL = (D.timeline && D.timeline.events) || [];
   var ERAS = (D.timeline && D.timeline.eras) || [];
   var SAFE_ID = /^[A-Za-z0-9._~-]{1,180}$/;
-  var SOCIAL = D.social !== false;   // false：不要评论、读后感、读者主页、作者后台（纯静态版）
 
   function uid8() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
@@ -107,7 +107,7 @@
     catch (e) { return Promise.resolve(null); }
   }
   function initCaps() {
-    Promise.all([SOCIAL ? use("db") : null, SOCIAL ? use("user") : null, use("downloads"), use("sample")]).then(function (r) {
+    Promise.all([use("db"), use("user"), use("downloads"), use("sample")]).then(function (r) {
       C.db = r[0]; C.user = r[1]; C.dl = r[2]; C.sample = r[3];
       if (!C.user) return null;
       return Promise.all([C.user.id().catch(function () { return null; }), C.user.me().catch(function () { return null; })]);
@@ -142,25 +142,13 @@
     if (C.readonly) return "readonly";
     return "ok";
   }
-  var AUTH = window.READER_AUTH || null;
   function sharedNote() {
     var s = sharedState();
     if (s === "wait") return "正在连接……";
-    if (AUTH) {
-      if (s === "nodb") return "评论区暂时连不上，稍后再试。";
-      if (s === "anon") return "登录后可以评论：输入邮箱，收验证码，起个昵称就行。";
-      if (s === "readonly") return "你现在只能看，不能发。";
-      return "";
-    }
     if (s === "nodb") return "评论和读后感要在 claude.ai 里打开这本书才能看到。";
     if (s === "anon") return "登录 claude.ai 之后可以参与评论。";
     if (s === "readonly") return "你现在可以看，但还不能发。想参与讨论，请作者在分享设置里把你的权限改成可以参与。";
     return "";
-  }
-  function loginBtn() {
-    var b = el("button", { type: "button", class: "btn-s pri", text: "邮箱登录" });
-    b.addEventListener("click", function () { AUTH.login(); });
-    return b;
   }
 
   function myDoc() { return S.users[C.uid] || null; }
@@ -437,8 +425,7 @@
     p.classList.add("picked");
     var has = L.bm.some(function (b) { return b.ch === n && b.p === pi; });
     var cnt = paraComments(n, pi).length;
-    pm.innerHTML = '<button type="button" data-a="bm">' + (has ? "取消书签" : "书签") + "</button>" +
-      (SOCIAL ? '<button type="button" data-a="cm">评论' + (cnt ? " " + cnt : "") + "</button>" : "") +
+    pm.innerHTML = '<button type="button" data-a="bm">' + (has ? "取消书签" : "书签") + '</button>' + (LOCAL ? "" : '<button type="button" data-a="cm">评论' + (cnt ? " " + cnt : "") + '</button>') +
       '<button type="button" data-a="card">金句卡</button><button type="button" data-a="link">链接</button>';
     pm.hidden = false;
     pmY = window.scrollY;
@@ -509,9 +496,9 @@
     cv.width = W; cv.height = H;
     var serif = cssVar("--serif", "serif"), display = cssVar("--display", serif);
     var pal;
-    if (tpl === "dark") pal = { bg: "#17121A", ink: "#F3E8DC", sub: "#B9A79A", acc: "#FF8547", acc2: "#6FA7FF", rule: "#3A2E3A" };
+    if (tpl === "dark") pal = { bg: "#0F1315", ink: "#E3DED2", sub: "#A9AEAA", acc: "#E9B04A", acc2: "#5E8E9B", rule: "#263236" };
     else if (tpl === "art") pal = { bg: cssVar("--bg-2", "#FFE3D0"), ink: cssVar("--ink", "#3A1E17"), sub: cssVar("--ink-2", "#6B3F33"), acc: cssVar("--acc", "#FF6A2B"), acc2: cssVar("--alt", "#4D8EF7"), rule: cssVar("--hard", "#3A1E17") };
-    else pal = { bg: "#FBF8F2", ink: "#231C17", sub: "#7A6E64", acc: cssVar("--acc", "#C2410C"), acc2: "#231C17", rule: "#E4DACB" };
+    else pal = { bg: "#F1EEE6", ink: "#1B2023", sub: "#6C7376", acc: "#B07510", acc2: "#1B2023", rule: "#CFC9BD" };
     ctx.fillStyle = pal.bg; ctx.fillRect(0, 0, W, H);
     if (tpl === "art") {
       ctx.strokeStyle = pal.rule; ctx.lineWidth = 6; ctx.strokeRect(48, 48, W - 96, H - 96);
@@ -527,7 +514,7 @@
       }
     } else if (tpl === "dark") {
       var g = ctx.createRadialGradient(W * .85, 0, 10, W * .85, 0, W);
-      g.addColorStop(0, "rgba(255,133,71,.22)"); g.addColorStop(1, "rgba(255,133,71,0)");
+      g.addColorStop(0, "rgba(233,176,74,.22)"); g.addColorStop(1, "rgba(233,176,74,0)");
       ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
     } else {
       ctx.fillStyle = pal.acc; ctx.fillRect(120, 150, 64, 8);
@@ -599,13 +586,6 @@
         var img = el("img", { src: cv.toDataURL("image/png"), alt: "金句卡片", class: "card-img" });
         tip.appendChild(img);
       };
-      if (!C.dl && !window.claude && cv.toBlob) {
-        cv.toBlob(function (blob) {
-          var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = fname;
-          document.body.appendChild(a); a.click(); a.remove(); R.toast("已保存");
-        }, "image/png");
-        return;
-      }
       if (!C.dl || !cv.toBlob) { fallback(); return; }
       cv.toBlob(function (blob) {
         C.dl.save({ filename: fname, data: blob }).then(function (r) {
@@ -903,7 +883,7 @@
     title: "时间线",
     render: function (box, arg) {
       var mr = R.maxRead();
-      box.innerHTML = '<header class="vw-h"><p class="kicker">' + esc(D.title) + '</p><h1>时间线</h1><p class="lede">从嘉靖年间的一页账，到民国的一条船，再到台风夜的一只冷箱。还没读到的事先模糊着，点一下才显示。</p></header>';
+      box.innerHTML = '<header class="vw-h"><p class="kicker">' + esc(D.title) + '</p><h1>时间线</h1><p class="lede">' + esc((D.timeline && D.timeline.lede) || '还没读到的事先模糊着，点一下才显示。') + '</p></header>';
       var tools = el("div", { class: "vw-tools" });
       var who = el("select", { id: "tlWho", "aria-label": "按人物" });
       who.appendChild(el("option", { value: "", text: "所有人物" }));
@@ -958,13 +938,13 @@
       sec.appendChild(ol);
       post.appendChild(sec);
     }
-    if (post && SOCIAL) {
+    if (post && !LOCAL) {
       var cm = el("section", { class: "cmts", id: "comments", "aria-label": "评论" });
       post.appendChild(cm);
       var sort = R.get("cmSort") || "new";
       addLive(function () { renderChapterComments(cm, n, sort, function (s) { sort = s; R.set("cmSort", s); }); });
     }
-    if (SOCIAL) addLive(function () { paintBubbles(n); });
+    if (!LOCAL) addLive(function () { paintBubbles(n); });
     void c;
   });
 
@@ -1091,7 +1071,6 @@
     if (st !== "ok") {
       ta.disabled = true; send.disabled = true;
       ta.placeholder = sharedNote();
-      if (st === "anon" && AUTH) { send.hidden = true; row.appendChild(loginBtn()); }
     }
     var replyTo = null;
     f.setReply = function (c, nm) { replyTo = c; to.hidden = false; to.textContent = "回复 " + nm; cancel.hidden = false; ta.focus(); };
@@ -1102,11 +1081,9 @@
       if (!t) { ta.focus(); return; }
       send.disabled = true;
       var c = { id: "c" + uid8(), ch: opts.ch, p: opts.p == null ? null : opts.p, text: t, ts: Date.now(), re: replyTo ? (replyTo.re || replyTo.id) : null, to: replyTo ? replyTo.uid : null };
-      ta.value = "";
       writeMine(function (d) { d.comments.push(c); }).then(function (ok) {
         send.disabled = false;
-        if (ok) { replyTo = null; to.hidden = true; cancel.hidden = true; R.toast("已发布"); }
-        else { var cur = document.getElementById(ta.id) || ta; if (!cur.value) cur.value = t; }
+        if (ok) { ta.value = ""; replyTo = null; to.hidden = true; cancel.hidden = true; R.toast("已发布"); }
       });
     });
     return f;
@@ -1179,7 +1156,7 @@
   /* =====================================================================
    * 读后感
    * ===================================================================== */
-  if (SOCIAL) R.view("reviews", {
+  if (!LOCAL) R.view("reviews", {
     title: "读后感",
     render: function (box) {
       box.innerHTML = '<header class="vw-h"><p class="kicker">' + esc(D.title) + '</p><h1>读后感</h1><p class="lede">读完了，或者读到一半，写几句给后来的人看。每人一篇，可以改。</p></header>';
@@ -1197,7 +1174,6 @@
         ta.addEventListener("input", function () { draft = ta.value; });
         if (st !== "ok") ta.disabled = true;
         var row = el("div", { class: "row" });
-        if (st === "anon" && AUTH) row.appendChild(loginBtn());
         row.appendChild(el("span", { class: "tip", text: "已读 " + doneList().length + " / " + N + " 章" }));
         if (my) { var dl = el("button", { type: "button", class: "btn-s ghost", text: "删除我的读后感" }); row.appendChild(dl); dl.addEventListener("click", function () { draft = null; writeMine(function (d) { d.review = null; }); }); }
         var sv = el("button", { type: "submit", class: "btn-s pri", text: my ? "更新" : "发布", disabled: st !== "ok" });
@@ -1275,11 +1251,11 @@
       box.appendChild(bar);
 
       var pv = el("section", { class: "privacy" });
-      if (SOCIAL) box.appendChild(pv);
-      if (SOCIAL) addLive(function () {
+      if (!LOCAL) box.appendChild(pv);
+      if (!LOCAL) addLive(function () {
         pv.innerHTML = "<h2>公开设置</h2>";
         var st = sharedState();
-        if (st !== "ok") { pv.appendChild(el("p", { class: "tip", text: sharedNote() })); if (st === "anon" && AUTH) pv.appendChild(loginBtn()); return; }
+        if (st !== "ok") { pv.appendChild(el("p", { class: "tip", text: sharedNote() })); return; }
         [["pubHl", "公开我的划线", "别人能在你的主页看到，也会算进“热门划线”。批注不公开。"],
          ["pubStats", "公开我的阅读进度", "别人能看到你读完了几章、读了多久。"]].forEach(function (x) {
           var lab = el("label", { class: "tog" });
@@ -1294,18 +1270,13 @@
         });
         if (SAFE_ID.test(C.uid)) pv.appendChild(el("a", { class: "btn-s", href: "#reader-" + C.uid, text: "看看别人眼里的我" }));
         if (C.owner) pv.appendChild(el("a", { class: "btn-s pri", href: "#admin", text: "作者后台" }));
-        if (AUTH && AUTH.loggedIn()) {
-          var rn = el("button", { type: "button", class: "btn-s", text: "改昵称" }); rn.addEventListener("click", function () { AUTH.rename(); });
-          var lo = el("button", { type: "button", class: "btn-s ghost", text: "退出登录" }); lo.addEventListener("click", function () { AUTH.logout(); });
-          pv.appendChild(rn); pv.appendChild(lo);
-        }
       });
 
       var tabs = el("div", { class: "seg big", role: "tablist" });
       var pane = el("div", { class: "pane" });
-      var TAB = SOCIAL ? [["hl", "划线与批注"], ["bm", "书签"], ["cm", "我的评论"]] : [["hl", "划线与批注"], ["bm", "书签"]];
+      var TAB = [["hl", "划线与批注"], ["bm", "书签"]];
+      if (!LOCAL) TAB.push(["cm", "我的评论"]);
       var curTab = R.get("shelfTab") || "hl";
-      if (!SOCIAL && curTab === "cm") curTab = "hl";
       TAB.forEach(function (x) {
         var b = el("button", { type: "button", role: "tab", "aria-selected": x[0] === curTab ? "true" : "false", text: x[1] });
         b.addEventListener("click", function () { curTab = x[0]; R.set("shelfTab", curTab); tabs.querySelectorAll("button").forEach(function (y) { y.setAttribute("aria-selected", y === b ? "true" : "false"); }); drawPane(); });
@@ -1366,7 +1337,7 @@
     }
   });
 
-  if (SOCIAL) R.view("reader", {
+  if (!LOCAL) R.view("reader", {
     title: "读者主页",
     render: function (box, id) {
       addLive(function () {
@@ -1417,10 +1388,10 @@
   /* =====================================================================
    * 作者后台
    * ===================================================================== */
-  if (SOCIAL) R.view("admin", {
+  if (!LOCAL) R.view("admin", {
     title: "作者后台",
     render: function (box, arg) {
-      box.innerHTML = '<header class="vw-h"><p class="kicker">' + esc(D.title) + '</p><h1>作者后台</h1><p class="lede">只有作者能看到这一页。阅读统计只包括登录过的读者。</p></header>';
+      box.innerHTML = '<header class="vw-h"><p class="kicker">' + esc(D.title) + '</p><h1>作者后台</h1><p class="lede">只有作者能看到这一页。统计只包括在 claude.ai 里打开、并且能写入数据的读者。</p></header>';
       var body = el("div");
       box.appendChild(body);
       var statsDocs = null, loading = false;
@@ -1555,7 +1526,7 @@
     var links = [];
     if (PEOPLE.length) links.push(["#people", "人物"]);
     if (TL.length) links.push(["#timeline", "时间线"]);
-    if (SOCIAL) links.push(["#reviews", "读后感"]);
+    if (!LOCAL) links.push(["#reviews", "读后感"]);
     links.push(["#shelf", "我的书房"]);
     q.innerHTML = "";
     links.forEach(function (x) { q.appendChild(el("a", { class: "qk", href: x[0], text: x[1] })); });
