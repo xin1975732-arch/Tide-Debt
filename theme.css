@@ -503,7 +503,7 @@ a.sn-b:hover { background: var(--bg-2); border-color: var(--lamp); }
   display: block;
   margin-top: 10px;
   font-family: "Cormorant Garamond", "EB Garamond", Georgia, "Times New Roman", serif;
-  font-size: 18px; font-style: italic; font-weight: 400; line-height: 1.2;
+  font-size: 24px; font-style: italic; font-weight: 400; line-height: 1.2;
   letter-spacing: .08em; text-indent: .08em; white-space: nowrap;
   color: var(--s-text-2); text-shadow: none;
 }
