@@ -496,3 +496,14 @@ a.sn-b:hover { background: var(--bg-2); border-color: var(--lamp); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; animation-delay: 0s !important; }
 }
+
+/* 英文书名：小字，退在中文书名下面 */
+.hero .wordmark::after {
+  content: "Tide Debt";
+  display: block;
+  margin-top: 10px;
+  font-family: "Cormorant Garamond", "EB Garamond", Georgia, "Times New Roman", serif;
+  font-size: 18px; font-style: italic; font-weight: 400; line-height: 1.2;
+  letter-spacing: .08em; text-indent: .08em; white-space: nowrap;
+  color: var(--s-text-2); text-shadow: none;
+}
